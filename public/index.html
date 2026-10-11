@@ -1,348 +1,746 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mello Code Dashboard</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mello Code - Free AI Coding Bot</title>
     <style>
-      :root {
-        --bg: #0b0d12;
-        --panel: #121821;
-        --gold: #f0c35d;
-        --text: #f4f6f8;
-        --muted: #b6c2d1;
-        --line: rgba(255,255,255,0.08);
-        --success: #81e4a8;
-      }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        background: var(--bg);
-        color: var(--text);
-      }
+        :root {
+            --primary: #f0c35d;
+            --primary-dark: #d5a12d;
+            --bg: #0a0d15;
+            --bg-2: #141b28;
+            --bg-3: #1a2235;
+            --text: #e8ecf1;
+            --text-muted: #a8b5c8;
+            --border: rgba(240, 195, 93, 0.15);
+            --border-light: rgba(255, 255, 255, 0.05);
+            --success: #4ade80;
+            --accent-blue: #60a5fa;
+        }
 
-      .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 24px;
-      }
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #0a0d15 0%, #141b28 50%, #0f1419 100%);
+            color: var(--text);
+            overflow-x: hidden;
+        }
 
-      header {
-        padding: 24px 0;
-        border-bottom: 1px solid var(--line);
-        margin-bottom: 32px;
-      }
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
 
-      .logo {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 800;
-        font-size: 1.4rem;
-        margin-bottom: 12px;
-      }
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: twinkle 3s infinite;
+        }
 
-      .logo-mark {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        display: grid;
-        place-items: center;
-        background: linear-gradient(135deg, #f1d179, #d5a12d);
-        color: #111;
-        font-weight: 900;
-      }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
 
-      h1 { margin: 0; }
-      .subtitle { color: var(--muted); font-size: 0.95rem; }
+        .glow-sphere {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 0;
+        }
 
-      .dashboard-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 24px;
-        margin-bottom: 32px;
-      }
+        .glow-1 {
+            width: 500px;
+            height: 500px;
+            background: rgba(240, 195, 93, 0.15);
+            top: -150px;
+            left: -100px;
+        }
 
-      .card {
-        background: rgba(255,255,255,0.02);
-        border: 1px solid var(--line);
-        border-radius: 16px;
-        padding: 24px;
-      }
+        .glow-2 {
+            width: 600px;
+            height: 600px;
+            background: rgba(96, 165, 250, 0.1);
+            bottom: -200px;
+            right: -150px;
+        }
 
-      .card h2 { margin: 0 0 12px; font-size: 1.2rem; }
-      .card p { margin: 0; color: var(--muted); line-height: 1.6; }
-      .card .status {
-        display: inline-block;
-        margin-top: 12px;
-        padding: 6px 12px;
-        background: rgba(129, 228, 168, 0.12);
-        border: 1px solid rgba(129, 228, 168, 0.3);
-        border-radius: 8px;
-        color: var(--success);
-        font-size: 0.85rem;
-      }
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
 
-      .workspace {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 24px;
-      }
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 40px;
+        }
 
-      .editor-panel {
-        background: rgba(255,255,255,0.01);
-        border: 1px solid var(--line);
-        border-radius: 16px;
-        padding: 20px;
-      }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
 
-      .editor-label {
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        color: var(--gold);
-        letter-spacing: 0.1em;
-        margin-bottom: 12px;
-      }
+        .logo-mark {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #f1d179 0%, #d5a12d 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1a1a1a;
+            font-weight: 900;
+            box-shadow: 0 8px 24px rgba(240, 195, 93, 0.3);
+        }
 
-      textarea, input, select {
-        width: 100%;
-        padding: 12px;
-        background: #0a0c10;
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        color: var(--text);
-        font-family: "Courier New", monospace;
-        font-size: 0.9rem;
-        margin-bottom: 12px;
-      }
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
 
-      textarea { min-height: 200px; resize: vertical; }
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
 
-      .button-group {
-        display: flex;
-        gap: 12px;
-      }
+        .nav-links a:hover {
+            color: var(--primary);
+        }
 
-      button {
-        flex: 1;
-        padding: 12px 16px;
-        border: none;
-        border-radius: 10px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: 0.2s ease all;
-      }
+        .nav-right {
+            display: flex;
+            gap: 12px;
+        }
 
-      .btn-primary {
-        background: linear-gradient(135deg, var(--gold), #d5a12d);
-        color: #111;
-      }
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
 
-      .btn-primary:hover { transform: translateY(-2px); }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #1a1a1a;
+            box-shadow: 0 8px 20px rgba(240, 195, 93, 0.3);
+        }
 
-      .btn-secondary {
-        background: rgba(255,255,255,0.05);
-        color: var(--text);
-        border: 1px solid var(--line);
-      }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(240, 195, 93, 0.4);
+        }
 
-      .btn-secondary:hover { background: rgba(255,255,255,0.08); }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            border: 1px solid var(--border-light);
+        }
 
-      .response-area {
-        background: #0a0c10;
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        padding: 16px;
-        min-height: 200px;
-        color: var(--muted);
-        font-family: "Courier New", monospace;
-        white-space: pre-wrap;
-        word-break: break-word;
-        max-height: 400px;
-        overflow: auto;
-      }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
 
-      .loading {
-        color: var(--gold);
-        font-style: italic;
-      }
+        /* Hero Section */
+        .hero {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            margin: 60px 0;
+        }
 
-      .roblox-section {
-        margin-top: 32px;
-        padding-top: 32px;
-        border-top: 1px solid var(--line);
-      }
+        .hero-content h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            line-height: 1.1;
+            margin-bottom: 20px;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #f0c35d 0%, #e8ecf1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
 
-      .roblox-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px;
-        margin-top: 16px;
-      }
+        .hero-content p {
+            font-size: 18px;
+            color: var(--text-muted);
+            line-height: 1.8;
+            margin-bottom: 30px;
+            max-width: 500px;
+        }
 
-      .template-btn {
-        padding: 16px;
-        background: rgba(240, 195, 93, 0.08);
-        border: 1px solid rgba(240, 195, 93, 0.3);
-        border-radius: 12px;
-        color: var(--text);
-        cursor: pointer;
-        transition: 0.2s ease all;
-      }
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
 
-      .template-btn:hover {
-        background: rgba(240, 195, 93, 0.15);
-        border-color: rgba(240, 195, 93, 0.5);
-      }
+        .stats {
+            display: flex;
+            gap: 40px;
+            margin-top: 50px;
+            padding-top: 50px;
+            border-top: 1px solid var(--border-light);
+        }
 
-      @media (max-width: 768px) {
-        .workspace { grid-template-columns: 1fr; }
-        .dashboard-grid { grid-template-columns: 1fr; }
-      }
+        .stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        /* Hero Visual */
+        .hero-visual {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .demo-card {
+            background: rgba(20, 27, 40, 0.8);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            backdrop-filter: blur(20px);
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .demo-header {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .demo-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .demo-dot.red { background: #ff6b6b; }
+        .demo-dot.yellow { background: #ffd166; }
+        .demo-dot.green { background: #4ade80; }
+
+        .demo-content {
+            background: rgba(10, 13, 21, 0.6);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .chat-bubble {
+            margin-bottom: 12px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .chat-user {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #1a1a1a;
+            margin-left: 30px;
+            text-align: right;
+        }
+
+        .chat-ai {
+            background: rgba(96, 165, 250, 0.1);
+            color: var(--accent-blue);
+            margin-right: 30px;
+            border: 1px solid rgba(96, 165, 250, 0.2);
+        }
+
+        /* Features */
+        .features {
+            margin: 100px 0;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-title h2 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+
+        .section-subtitle {
+            color: var(--text-muted);
+            font-size: 18px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: rgba(20, 27, 40, 0.6);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 32px 24px;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            background: rgba(20, 27, 40, 0.9);
+            border-color: var(--border);
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+
+        .feature-card h3 {
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        /* Roblox Section */
+        .roblox-section {
+            background: linear-gradient(135deg, rgba(240, 195, 93, 0.05) 0%, rgba(96, 165, 250, 0.05) 100%);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 60px 40px;
+            margin: 100px 0;
+            text-align: center;
+        }
+
+        .roblox-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+        }
+
+        .roblox-section p {
+            color: var(--text-muted);
+            font-size: 18px;
+            margin-bottom: 32px;
+        }
+
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .template-btn {
+            background: rgba(240, 195, 93, 0.08);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            color: var(--text);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .template-btn:hover {
+            background: rgba(240, 195, 93, 0.15);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        /* Code Generator Section */
+        .generator-section {
+            margin: 100px 0;
+        }
+
+        .generator-container {
+            background: rgba(20, 27, 40, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        .input-panel, .output-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 12px;
+        }
+
+        textarea, select, input {
+            background: rgba(10, 13, 21, 0.8);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: var(--text);
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            margin-bottom: 12px;
+            resize: none;
+        }
+
+        textarea {
+            min-height: 200px;
+        }
+
+        select, input {
+            min-height: 44px;
+        }
+
+        textarea:focus, select:focus, input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(10, 13, 21, 1);
+        }
+
+        .output-box {
+            background: rgba(10, 13, 21, 0.8);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            padding: 16px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            min-height: 200px;
+            max-height: 400px;
+            overflow: auto;
+            color: var(--accent-blue);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .output-box.loading {
+            color: var(--primary);
+            font-style: italic;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .button-group .btn {
+            flex: 1;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-light);
+            padding: 40px 0;
+            margin-top: 100px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            .hero,
+            .generator-container,
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero-content h1 {
+                font-size: 2rem;
+            }
+
+            .template-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
-  </head>
-  <body>
+</head>
+<body>
+    <div class="glow-sphere glow-1"></div>
+    <div class="glow-sphere glow-2"></div>
+
     <div class="container">
-      <header>
-        <div class="logo">
-          <div class="logo-mark">M</div>
-          <div>
-            <h1>Mello Code Dashboard</h1>
-            <p class="subtitle">API + Web Interface for AI Coding</p>
-          </div>
-        </div>
-      </header>
+        <!-- Navigation -->
+        <nav>
+            <div class="logo">
+                <div class="logo-mark">M</div>
+                Mello Code
+            </div>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#roblox">Roblox</a></li>
+                <li><a href="#generator">Try</a></li>
+            </ul>
+            <div class="nav-right">
+                <button class="btn btn-secondary">GitHub</button>
+                <button class="btn btn-primary">Download</button>
+            </div>
+        </nav>
 
-      <div class="dashboard-grid">
-        <div class="card">
-          <h2>🚀 Get Started</h2>
-          <p>Connect to Mello Code API and start generating code instantly.</p>
-          <div class="status">API Ready</div>
-        </div>
+        <!-- Hero -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Build Games, Apps & Projects with AI</h1>
+                <p>Mello Code is a free AI coding assistant focused on Roblox development, game creation, and full-stack projects. No forced credits. No limitations. 100% open.</p>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary">Get Started Free</button>
+                    <button class="btn btn-secondary">Watch Demo</button>
+                </div>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-number">100%</div>
+                        <div class="stat-label">Free & Open</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">Roblox</div>
+                        <div class="stat-label">Studio Plugin</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">24/7</div>
+                        <div class="stat-label">Local-First</div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="demo-card">
+                    <div class="demo-header">
+                        <div class="demo-dot red"></div>
+                        <div class="demo-dot yellow"></div>
+                        <div class="demo-dot green"></div>
+                    </div>
+                    <div class="demo-content">
+                        <div class="chat-bubble chat-user">Build me a Roblox tycoon game</div>
+                        <div class="chat-bubble chat-ai">I'll create shops, upgrades, and leaderboards with proper DataStore integration...</div>
+                        <div class="chat-bubble chat-user">Add a round system</div>
+                        <div class="chat-bubble chat-ai">Done. Lobby timer, voting, and round flow ready to connect.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        <div class="card">
-          <h2>🎮 Roblox Plugin</h2>
-          <p>Use the Roblox Studio plugin to connect to this API and generate Luau code.</p>
-          <div class="status">Plugin Available</div>
-        </div>
+        <!-- Features -->
+        <section id="features" class="features">
+            <div class="section-title">
+                <h2>Everything You Need to Build</h2>
+                <p class="section-subtitle">Powerful AI coding features built for real projects</p>
+            </div>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>AI Code Generation</h3>
+                    <p>Generate complete, working code across multiple languages. From snippets to full systems.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎮</div>
+                    <h3>Roblox First</h3>
+                    <p>Built specifically for Roblox game development. Luau scripting, Studio integration, and gameplay systems.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3>Project-Aware</h3>
+                    <p>Keep full context of your project. The AI understands your architecture and connected systems.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔧</div>
+                    <h3>Code Debugging</h3>
+                    <p>Fix errors, optimize performance, and refactor code with detailed explanations.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h3>Documentation</h3>
+                    <p>Generate docs, comments, and guides for your codebase automatically.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Desktop App</h3>
+                    <p>Rich desktop interface with project workspace, chat history, and code editor.</p>
+                </div>
+            </div>
+        </section>
 
-        <div class="card">
-          <h2>💻 Desktop App</h2>
-          <p>Download Mello Code and use this dashboard as your AI backend.</p>
-          <div class="status">Open Source</div>
-        </div>
-      </div>
+        <!-- Roblox Section -->
+        <section id="roblox" class="roblox-section">
+            <h2>🎮 Built for Roblox Developers</h2>
+            <p>Generate complete gameplay systems with a single prompt</p>
+            <div class="template-grid">
+                <button class="template-btn" onclick="selectTemplate('Tycoon game with shops and currency')">Tycoon System</button>
+                <button class="template-btn" onclick="selectTemplate('Inventory system with items and slots')">Inventory</button>
+                <button class="template-btn" onclick="selectTemplate('Leaderboard with player stats')">Leaderboard</button>
+                <button class="template-btn" onclick="selectTemplate('Round-based game system with teams')">Rounds</button>
+                <button class="template-btn" onclick="selectTemplate('NPC with dialogue and quests')">NPC System</button>
+                <button class="template-btn" onclick="selectTemplate('DataStore player data saving')">DataStore</button>
+            </div>
+        </section>
 
-      <div class="workspace">
-        <div class="editor-panel">
-          <div class="editor-label">📝 Code Generation Prompt</div>
-          <textarea id="promptInput" placeholder="Describe the code you want to build...\n\nExample: Create a Roblox tycoon game with a shop system and leaderboard."></textarea>
+        <!-- Code Generator -->
+        <section id="generator" class="generator-section">
+            <div class="section-title">
+                <h2>Try Mello Code Now</h2>
+                <p class="section-subtitle">Generate code instantly</p>
+            </div>
+            <div class="generator-container">
+                <div class="input-panel">
+                    <label class="input-label">📝 What do you want to build?</label>
+                    <textarea id="promptInput" placeholder="Example: Create a Roblox tycoon with shops, upgrades, and leaderboards..."></textarea>
 
-          <div class="editor-label">🔧 Language</div>
-          <select id="languageSelect">
-            <option value="javascript">JavaScript</option>
-            <option value="python">Python</option>
-            <option value="lua">Lua / Luau</option>
-            <option value="typescript">TypeScript</option>
-            <option value="csharp">C#</option>
-            <option value="java">Java</option>
-          </select>
+                    <label class="input-label">🔧 Language</label>
+                    <select id="languageSelect">
+                        <option value="lua">Lua / Luau (Roblox)</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="python">Python</option>
+                        <option value="typescript">TypeScript</option>
+                        <option value="csharp">C#</option>
+                    </select>
 
-          <div class="editor-label">🎯 Framework (Optional)</div>
-          <input id="frameworkInput" placeholder="React, Vue, Django, etc." />
+                    <label class="input-label">🎯 Framework (Optional)</label>
+                    <input id="frameworkInput" type="text" placeholder="React, Vue, Django, etc.">
 
-          <div class="button-group">
-            <button class="btn-primary" onclick="generateCode()">✨ Generate Code</button>
-            <button class="btn-secondary" onclick="clearInputs()">Clear</button>
-          </div>
-        </div>
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="generateCode()">✨ Generate Code</button>
+                        <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+                    </div>
+                </div>
 
-        <div class="editor-panel">
-          <div class="editor-label">📤 Generated Response</div>
-          <div class="response-area" id="responseArea">Response will appear here...</div>
-          <button class="btn-secondary" style="margin-top: 12px; width: 100%;" onclick="copyResponse()">Copy Response</button>
-        </div>
-      </div>
-
-      <div class="roblox-section">
-        <h2>🎮 Roblox Quick Templates</h2>
-        <p style="color: var(--muted);">Click to generate Roblox game systems:</p>
-        <div class="roblox-grid">
-          <button class="template-btn" onclick="generateRobloxTemplate('Tycoon game with shops and upgrades')">Tycoon System</button>
-          <button class="template-btn" onclick="generateRobloxTemplate('Inventory and item system with drop functionality')">Inventory System</button>
-          <button class="template-btn" onclick="generateRobloxTemplate('Player leaderboard with stats saving')">Leaderboard</button>
-          <button class="template-btn" onclick="generateRobloxTemplate('Round-based game with lobby timer and voting')">Round System</button>
-          <button class="template-btn" onclick="generateRobloxTemplate('NPC with dialogue and quest system')">NPC System</button>
-          <button class="template-btn" onclick="generateRobloxTemplate('DataStore system for player data saving and loading')">DataStore</button>
-        </div>
-      </div>
+                <div class="output-panel">
+                    <label class="input-label">💻 Generated Code</label>
+                    <div class="output-box" id="outputBox">Generated code will appear here...</div>
+                    <button class="btn btn-secondary" onclick="copyOutput()" style="margin-top: 12px; width: 100%;">📋 Copy Code</button>
+                </div>
+            </div>
+        </section>
     </div>
 
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Mello Code. Free and open-source AI coding assistant.</p>
+        </div>
+    </footer>
+
     <script>
-      const API_URL = 'http://localhost:3001';
+        const API_URL = 'http://localhost:3001';
 
-      async function generateCode() {
-        const prompt = document.getElementById('promptInput').value.trim();
-        const language = document.getElementById('languageSelect').value;
-        const framework = document.getElementById('frameworkInput').value.trim();
-
-        if (!prompt) {
-          alert('Please enter a prompt');
-          return;
+        function selectTemplate(template) {
+            document.getElementById('promptInput').value = template;
+            document.getElementById('promptInput').scrollIntoView({ behavior: 'smooth' });
         }
 
-        const responseArea = document.getElementById('responseArea');
-        responseArea.textContent = 'Generating...';
-        responseArea.classList.add('loading');
+        async function generateCode() {
+            const prompt = document.getElementById('promptInput').value.trim();
+            const language = document.getElementById('languageSelect').value;
+            const framework = document.getElementById('frameworkInput').value.trim();
+            const output = document.getElementById('outputBox');
 
-        try {
-          const response = await fetch(`${API_URL}/api/generate-code`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, language, framework })
-          });
+            if (!prompt) {
+                output.textContent = 'Please enter a prompt first!';
+                return;
+            }
 
-          const data = await response.json();
+            output.textContent = 'Generating code...';
+            output.classList.add('loading');
 
-          if (data.ok) {
-            responseArea.textContent = data.code;
-            responseArea.classList.remove('loading');
-          } else {
-            responseArea.textContent = `Error: ${data.error}`;
-            responseArea.classList.remove('loading');
-          }
-        } catch (error) {
-          responseArea.textContent = `Connection error: ${error.message}`;
-          responseArea.classList.remove('loading');
+            try {
+                const response = await fetch(`${API_URL}/api/generate-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, language, framework })
+                });
+
+                const data = await response.json();
+
+                if (data.ok) {
+                    output.textContent = data.code;
+                    output.classList.remove('loading');
+                } else {
+                    output.textContent = `Error: ${data.error || 'Unknown error'}`;
+                    output.classList.remove('loading');
+                }
+            } catch (error) {
+                output.textContent = `Connection Error: ${error.message}\n\nMake sure the API is running on http://localhost:3001`;
+                output.classList.remove('loading');
+            }
         }
-      }
 
-      function generateRobloxTemplate(template) {
-        document.getElementById('promptInput').value = `Create a Roblox game system for: ${template}`;
-        document.getElementById('languageSelect').value = 'lua';
-      }
+        function clearAll() {
+            document.getElementById('promptInput').value = '';
+            document.getElementById('frameworkInput').value = '';
+            document.getElementById('outputBox').textContent = 'Generated code will appear here...';
+        }
 
-      function clearInputs() {
-        document.getElementById('promptInput').value = '';
-        document.getElementById('frameworkInput').value = '';
-        document.getElementById('responseArea').textContent = 'Response will appear here...';
-      }
+        function copyOutput() {
+            const text = document.getElementById('outputBox').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Code copied to clipboard!');
+            }).catch(() => {
+                alert('Failed to copy');
+            });
+        }
 
-      function copyResponse() {
-        const text = document.getElementById('responseArea').textContent;
-        navigator.clipboard.writeText(text).then(() => {
-          alert('Copied to clipboard!');
+        // Allow Ctrl+Enter to generate
+        document.getElementById('promptInput').addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                generateCode();
+            }
         });
-      }
-
-      // Allow Enter to submit
-      document.getElementById('promptInput').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && e.ctrlKey) {
-          generateCode();
-        }
-      });
     </script>
-  </body>
+</body>
 </html>
