@@ -1,873 +1,242 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mello Code - Free AI Coding Bot</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --gold: #f0c35d;
-            --gold-dark: #d5a12d;
-            --blue: #60a5fa;
-            --blue-dark: #3b82f6;
-            --green: #4ade80;
-            --red: #ff6b6b;
-            --purple: #a78bfa;
-            --bg: #0a0d15;
-            --bg-dark: #050709;
-            --text: #e8ecf1;
-            --text-muted: #a8b5c8;
-            --border: rgba(240, 195, 93, 0.2);
-            --border-light: rgba(255, 255, 255, 0.08);
-        }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background: linear-gradient(135deg, #0a0d15 0%, #1a1f35 50%, #0f1419 100%);
-            color: var(--text);
-            overflow-x: hidden;
-            line-height: 1.6;
-        }
-
-        .glow-sphere {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(100px);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .glow-gold {
-            width: 600px;
-            height: 600px;
-            background: rgba(240, 195, 93, 0.12);
-            top: -200px;
-            left: -200px;
-        }
-
-        .glow-blue {
-            width: 700px;
-            height: 700px;
-            background: rgba(96, 165, 250, 0.1);
-            bottom: -300px;
-            right: -200px;
-        }
-
-        .glow-purple {
-            width: 500px;
-            height: 500px;
-            background: rgba(167, 139, 250, 0.08);
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        .container {
-            position: relative;
-            z-index: 1;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        /* Navigation */
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 0;
-            border-bottom: 1px solid var(--border-light);
-            margin-bottom: 40px;
-            backdrop-filter: blur(10px);
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            font-size: 24px;
-            font-weight: 900;
-            letter-spacing: -0.02em;
-        }
-
-        .logo-mark {
-            width: 44px;
-            height: 44px;
-            background: linear-gradient(135deg, #f1d179 0%, #e6b800 50%, #d5a12d 100%);
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #1a1a1a;
-            font-weight: 900;
-            box-shadow: 0 12px 30px rgba(240, 195, 93, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.2);
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 40px;
-            list-style: none;
-        }
-
-        .nav-links a {
-            color: var(--text-muted);
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        .nav-links a:hover {
-            color: var(--gold);
-        }
-
-        .nav-links a::after {
-            content: '';
-            position: absolute;
-            bottom: -4px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: linear-gradient(90deg, var(--gold), transparent);
-            transition: width 0.3s;
-        }
-
-        .nav-links a:hover::after {
-            width: 100%;
-        }
-
-        .nav-right {
-            display: flex;
-            gap: 12px;
-        }
-
-        /* Buttons */
-        .btn {
-            padding: 13px 28px;
-            border: none;
-            border-radius: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 14px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-            color: #1a1a1a;
-            box-shadow: 0 10px 25px rgba(240, 195, 93, 0.35);
-            border: none;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(240, 195, 93, 0.5);
-        }
-
-        .btn-primary:active {
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: rgba(96, 165, 250, 0.1);
-            color: var(--blue);
-            border: 2px solid var(--blue);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(96, 165, 250, 0.2);
-            transform: translateY(-2px);
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: var(--text);
-            border: 2px solid var(--border);
-        }
-
-        .btn-outline:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: var(--gold);
-            color: var(--gold);
-        }
-
-        .btn-sm {
-            padding: 10px 20px;
-            font-size: 12px;
-        }
-
-        .btn-lg {
-            padding: 16px 40px;
-            font-size: 16px;
-        }
-
-        /* Hero Section */
-        .hero {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 60px;
-            align-items: center;
-            margin: 80px 0;
-        }
-
-        .hero-content h1 {
-            font-size: clamp(2.8rem, 7vw, 4.5rem);
-            line-height: 1.05;
-            margin-bottom: 24px;
-            letter-spacing: -0.03em;
-            background: linear-gradient(135deg, #f0c35d 0%, #60a5fa 50%, #4ade80 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hero-content p {
-            font-size: 18px;
-            color: var(--text-muted);
-            line-height: 1.8;
-            margin-bottom: 32px;
-            max-width: 550px;
-        }
-
-        .hero-buttons {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            margin-bottom: 50px;
-        }
-
-        .hero-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-            padding-top: 40px;
-            border-top: 1px solid var(--border-light);
-        }
-
-        .stat {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .stat-number {
-            font-size: 32px;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--gold), var(--blue));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .stat-label {
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-top: 6px;
-        }
-
-        /* Hero Visual */
-        .hero-visual {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .demo-card {
-            background: rgba(20, 27, 40, 0.85);
-            border: 2px solid var(--border);
-            border-radius: 24px;
-            padding: 28px;
-            backdrop-filter: blur(20px);
-            width: 100%;
-            max-width: 480px;
-            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6), 0 0 60px rgba(240, 195, 93, 0.1);
-        }
-
-        .demo-header {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 18px;
-        }
-
-        .demo-dot {
-            width: 13px;
-            height: 13px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            transition: 0.3s;
-        }
-
-        .demo-dot.red { background: var(--red); box-shadow: 0 0 12px rgba(255, 107, 107, 0.5); }
-        .demo-dot.yellow { background: var(--gold); box-shadow: 0 0 12px rgba(240, 195, 93, 0.5); }
-        .demo-dot.green { background: var(--green); box-shadow: 0 0 12px rgba(74, 222, 128, 0.5); }
-
-        .demo-content {
-            background: rgba(10, 13, 21, 0.7);
-            border-radius: 16px;
-            padding: 18px;
-            border: 1px solid var(--border-light);
-        }
-
-        .chat-bubble {
-            margin-bottom: 14px;
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 13px;
-            line-height: 1.5;
-            animation: slideIn 0.5s ease;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .chat-user {
-            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-            color: #1a1a1a;
-            margin-left: 40px;
-            text-align: right;
-            box-shadow: 0 6px 20px rgba(240, 195, 93, 0.25);
-        }
-
-        .chat-ai {
-            background: rgba(96, 165, 250, 0.12);
-            color: var(--blue);
-            margin-right: 40px;
-            border: 1px solid rgba(96, 165, 250, 0.3);
-        }
-
-        /* Features */
-        .features {
-            margin: 120px 0;
-        }
-
-        .section-title {
-            text-align: center;
-            margin-bottom: 70px;
-        }
-
-        .section-title h2 {
-            font-size: clamp(2.2rem, 6vw, 3.5rem);
-            margin-bottom: 18px;
-            letter-spacing: -0.02em;
-            background: linear-gradient(135deg, var(--gold), var(--blue), var(--purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .section-subtitle {
-            color: var(--text-muted);
-            font-size: 18px;
-        }
-
-        .feature-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 28px;
-        }
-
-        .feature-card {
-            background: linear-gradient(135deg, rgba(240, 195, 93, 0.05), rgba(96, 165, 250, 0.05));
-            border: 2px solid var(--border-light);
-            border-radius: 20px;
-            padding: 36px 28px;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(240, 195, 93, 0.1), transparent);
-            transition: 0.3s;
-        }
-
-        .feature-card:hover {
-            background: linear-gradient(135deg, rgba(240, 195, 93, 0.1), rgba(96, 165, 250, 0.1));
-            border-color: var(--border);
-            transform: translateY(-8px);
-            box-shadow: 0 20px 50px rgba(240, 195, 93, 0.1);
-        }
-
-        .feature-content {
-            position: relative;
-            z-index: 2;
-        }
-
-        .feature-icon {
-            font-size: 48px;
-            margin-bottom: 18px;
-            display: inline-block;
-            transition: 0.3s;
-        }
-
-        .feature-card:hover .feature-icon {
-            transform: scale(1.15) rotate(5deg);
-        }
-
-        .feature-card h3 {
-            font-size: 22px;
-            margin-bottom: 12px;
-            color: var(--text);
-        }
-
-        .feature-card p {
-            color: var(--text-muted);
-            line-height: 1.7;
-            font-size: 15px;
-        }
-
-        /* Roblox Section */
-        .roblox-section {
-            background: linear-gradient(135deg, rgba(240, 195, 93, 0.08), rgba(96, 165, 250, 0.08), rgba(167, 139, 250, 0.08));
-            border: 2px solid var(--border);
-            border-radius: 28px;
-            padding: 70px 50px;
-            margin: 120px 0;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(240, 195, 93, 0.08);
-        }
-
-        .roblox-section h2 {
-            font-size: 2.8rem;
-            margin-bottom: 16px;
-            background: linear-gradient(135deg, var(--gold), var(--blue));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .roblox-section p {
-            color: var(--text-muted);
-            font-size: 18px;
-            margin-bottom: 40px;
-        }
-
-        .template-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
-        }
-
-        .template-btn {
-            background: linear-gradient(135deg, rgba(240, 195, 93, 0.12), rgba(96, 165, 250, 0.12));
-            border: 2px solid var(--border);
-            border-radius: 14px;
-            padding: 18px 16px;
-            color: var(--text);
-            cursor: pointer;
-            font-weight: 700;
-            transition: all 0.3s;
-        }
-
-        .template-btn:hover {
-            background: linear-gradient(135deg, rgba(240, 195, 93, 0.25), rgba(96, 165, 250, 0.25));
-            border-color: var(--gold);
-            transform: translateY(-4px);
-            box-shadow: 0 12px 30px rgba(240, 195, 93, 0.15);
-        }
-
-        /* Code Generator Section */
-        .generator-section {
-            margin: 120px 0;
-        }
-
-        .generator-container {
-            background: linear-gradient(135deg, rgba(240, 195, 93, 0.05), rgba(96, 165, 250, 0.05));
-            border: 2px solid var(--border);
-            border-radius: 24px;
-            padding: 48px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            box-shadow: 0 20px 60px rgba(240, 195, 93, 0.08);
-        }
-
-        .input-panel, .output-panel {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .input-label {
-            font-size: 14px;
-            font-weight: 700;
-            background: linear-gradient(90deg, var(--gold), var(--blue));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            margin-bottom: 14px;
-        }
-
-        textarea, select, input {
-            background: rgba(10, 13, 21, 0.8);
-            border: 2px solid var(--border-light);
-            border-radius: 12px;
-            padding: 14px 16px;
-            color: var(--text);
-            font-family: 'Monaco', 'Courier New', monospace;
-            font-size: 14px;
-            margin-bottom: 16px;
-            resize: none;
-            transition: all 0.3s;
-        }
-
-        textarea {
-            min-height: 220px;
-        }
-
-        select, input {
-            min-height: 48px;
-        }
-
-        textarea:focus, select:focus, input:focus {
-            outline: none;
-            border-color: var(--gold);
-            background: rgba(10, 13, 21, 1);
-            box-shadow: 0 0 20px rgba(240, 195, 93, 0.2);
-        }
-
-        .output-box {
-            background: rgba(10, 13, 21, 0.9);
-            border: 2px solid var(--border-light);
-            border-radius: 12px;
-            padding: 18px;
-            font-family: 'Monaco', 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.7;
-            min-height: 220px;
-            max-height: 450px;
-            overflow: auto;
-            color: var(--blue);
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        .output-box.loading {
-            color: var(--gold);
-            font-style: italic;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
-        .button-group {
-            display: flex;
-            gap: 14px;
-        }
-
-        .button-group .btn {
-            flex: 1;
-        }
-
-        /* Footer */
-        footer {
-            border-top: 2px solid var(--border-light);
-            padding: 50px 0;
-            margin-top: 120px;
-            text-align: center;
-            color: var(--text-muted);
-            background: rgba(10, 13, 21, 0.5);
-        }
-
-        footer p {
-            margin: 0;
-        }
-
-        @media (max-width: 768px) {
-            .hero,
-            .generator-container {
-                grid-template-columns: 1fr;
-            }
-
-            .nav-links {
-                display: none;
-            }
-
-            .hero-content h1 {
-                font-size: 2.2rem;
-            }
-
-            .template-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .hero-stats {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="glow-sphere glow-gold"></div>
-    <div class="glow-sphere glow-blue"></div>
-    <div class="glow-sphere glow-purple"></div>
-
-    <div class="container">
-        <!-- Navigation -->
-        <nav>
-            <div class="logo">
-                <div class="logo-mark">M</div>
-                Mello Code
-            </div>
-            <ul class="nav-links">
-                <li><a href="#features">Features</a></li>
-                <li><a href="#roblox">Roblox</a></li>
-                <li><a href="#generator">Try It</a></li>
-            </ul>
-            <div class="nav-right">
-                <button class="btn btn-outline btn-sm" onclick="window.open('https://github.com/rasmussenzeppelin2-cloud/mello-code', '_blank')">GitHub</button>
-                <button class="btn btn-primary btn-sm" onclick="alert('Download coming soon!')">Download</button>
-            </div>
-        </nav>
-
-        <!-- Hero -->
-        <section class="hero">
-            <div class="hero-content">
-                <h1>Build Games, Apps & Projects with AI</h1>
-                <p>Mello Code is a free, open-source AI coding assistant. Create Roblox games, build complete systems, fix bugs, and plan architecture with an AI that understands your project.</p>
-                <div class="hero-buttons">
-                    <button class="btn btn-primary btn-lg" onclick="scrollToGenerator()">✨ Try Now</button>
-                    <button class="btn btn-secondary btn-lg" onclick="alert('Demo video coming soon!')">📹 Watch Demo</button>
-                </div>
-                <div class="hero-stats">
-                    <div class="stat">
-                        <div class="stat-number">100%</div>
-                        <div class="stat-label">Free & Open</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-number">🎮</div>
-                        <div class="stat-label">Roblox Plugin</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-number">24/7</div>
-                        <div class="stat-label">Local-First</div>
-                    </div>
-                </div>
-            </div>
-            <div class="hero-visual">
-                <div class="demo-card">
-                    <div class="demo-header">
-                        <div class="demo-dot red"></div>
-                        <div class="demo-dot yellow"></div>
-                        <div class="demo-dot green"></div>
-                    </div>
-                    <div class="demo-content">
-                        <div class="chat-bubble chat-user">Build a Roblox tycoon game</div>
-                        <div class="chat-bubble chat-ai">I'll create shops, upgrades, and leaderboards with DataStore saving...</div>
-                        <div class="chat-bubble chat-user">Add a round system</div>
-                        <div class="chat-bubble chat-ai">Done. Lobby timer, voting, and round flow integrated.</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Features -->
-        <section id="features" class="features">
-            <div class="section-title">
-                <h2>Everything You Need to Build</h2>
-                <p class="section-subtitle">Powerful AI coding features built for real projects</p>
-            </div>
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <div class="feature-content">
-                        <div class="feature-icon">⚡</div>
-                        <h3>AI Code Generation</h3>
-                        <p>Generate complete, working code across multiple languages. From snippets to full game systems.</p>
-                    </div>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-content">
-                        <div class="feature-icon">🎮</div>
-                        <h3>Roblox Specialist</h3>
-                        <p>Built specifically for Roblox. Luau scripting, Studio integration, and complete gameplay systems.</p>
-                    </div>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-content">
-                        <div class="feature-icon">🧠</div>
-                        <h3>Project-Aware AI</h3>
-                        <p>Understands your entire project. Keeps track of architecture and connected systems.</p>
-                    </div>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-content">
-                        <div class="feature-icon">🐛</div>
-                        <h3>Debugging & Fixing</h3>
-                        <p>Fix errors, optimize performance, refactor code with detailed explanations.</p>
-                    </div>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-content">
-                        <div class="feature-icon">📚</div>
-                        <h3>Documentation</h3>
-                        <p>Auto-generate docs, comments, and guides for your entire codebase.</p>
-                    </div>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-content">
-                        <div class="feature-icon">🚀</div>
-                        <h3>Desktop App</h3>
-                        <p>Rich Windows app with project workspace, chat history, and code editor.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Roblox Section -->
-        <section id="roblox" class="roblox-section">
-            <h2>🎮 Built for Roblox Developers</h2>
-            <p>Generate complete gameplay systems with AI</p>
-            <div class="template-grid">
-                <button class="template-btn" onclick="selectTemplate('Create a Roblox tycoon game with shops, upgrades, and currency system')">🏭 Tycoon</button>
-                <button class="template-btn" onclick="selectTemplate('Build an inventory system with item slots and drop mechanics')">📦 Inventory</button>
-                <button class="template-btn" onclick="selectTemplate('Make a leaderboard system that displays player stats and ranks')">📊 Leaderboard</button>
-                <button class="template-btn" onclick="selectTemplate('Create a round-based game system with teams and voting')">🎯 Rounds</button>
-                <button class="template-btn" onclick="selectTemplate('Build an NPC with dialogue trees and quest system')">🤖 NPCs</button>
-                <button class="template-btn" onclick="selectTemplate('Create a DataStore system for saving and loading player data')">💾 DataStore</button>
-            </div>
-        </section>
-
-        <!-- Code Generator -->
-        <section id="generator" class="generator-section">
-            <div class="section-title">
-                <h2>Try Mello Code Now</h2>
-                <p class="section-subtitle">Generate code instantly with AI</p>
-            </div>
-            <div class="generator-container">
-                <div class="input-panel">
-                    <label class="input-label">📝 What do you want to build?</label>
-                    <textarea id="promptInput" placeholder="Example: Create a Roblox tycoon with shops, upgrades, leaderboards, and DataStore saving..."></textarea>
-
-                    <label class="input-label">🔧 Language</label>
-                    <select id="languageSelect">
-                        <option value="lua">Lua / Luau (Roblox)</option>
-                        <option value="javascript">JavaScript</option>
-                        <option value="python">Python</option>
-                        <option value="typescript">TypeScript</option>
-                        <option value="csharp">C# / Unity</option>
-                    </select>
-
-                    <label class="input-label">🎨 Framework (Optional)</label>
-                    <input id="frameworkInput" type="text" placeholder="React, Vue, Django, Express, etc.">
-
-                    <div class="button-group">
-                        <button class="btn btn-primary" onclick="generateCode()">✨ Generate Code</button>
-                        <button class="btn btn-outline" onclick="clearAll()">Clear</button>
-                    </div>
-                </div>
-
-                <div class="output-panel">
-                    <label class="input-label">💻 Generated Code</label>
-                    <div class="output-box" id="outputBox">Generated code will appear here... (Ctrl+Enter to generate)</div>
-                    <button class="btn btn-secondary" onclick="copyOutput()" style="margin-top: auto;">📋 Copy Code</button>
-                </div>
-            </div>
-        </section>
-    </div>
-
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <p>&copy; 2024 Mello Code • Free AI Coding Assistant • <a href="https://github.com/rasmussenzeppelin2-cloud/mello-code" target="_blank" style="color: var(--gold);">GitHub</a></p>
-        </div>
-    </footer>
-
-    <script>
-        const API_URL = 'http://localhost:3001';
-
-        function scrollToGenerator() {
-            document.getElementById('generator').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function selectTemplate(template) {
-            document.getElementById('promptInput').value = template;
-            document.getElementById('generator').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        async function generateCode() {
-            const prompt = document.getElementById('promptInput').value.trim();
-            const language = document.getElementById('languageSelect').value;
-            const framework = document.getElementById('frameworkInput').value.trim();
-            const output = document.getElementById('outputBox');
-
-            if (!prompt) {
-                output.textContent = '⚠️ Please enter a prompt first!';
-                return;
-            }
-
-            output.textContent = '⏳ Generating code...';
-            output.classList.add('loading');
-
-            try {
-                const response = await fetch(`${API_URL}/api/generate-code`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt, language, framework })
-                });
-
-                const data = await response.json();
-
-                if (data.ok) {
-                    output.textContent = data.code;
-                    output.classList.remove('loading');
-                } else {
-                    output.textContent = `❌ Error: ${data.error || 'Unknown error'}`;
-                    output.classList.remove('loading');
-                }
-            } catch (error) {
-                output.textContent = `🔌 Connection Error: ${error.message}\n\nMake sure the API is running on http://localhost:3001`;
-                output.classList.remove('loading');
-            }
-        }
-
-        function clearAll() {
-            document.getElementById('promptInput').value = '';
-            document.getElementById('frameworkInput').value = '';
-            document.getElementById('outputBox').textContent = 'Generated code will appear here...';
-            document.getElementById('outputBox').classList.remove('loading');
-        }
-
-        function copyOutput() {
-            const text = document.getElementById('outputBox').textContent;
-            navigator.clipboard.writeText(text).then(() => {
-                alert('✅ Code copied to clipboard!');
-            }).catch(() => {
-                alert('❌ Failed to copy');
-            });
-        }
-
-        // Allow Ctrl+Enter or Cmd+Enter to generate
-        document.getElementById('promptInput').addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                generateCode();
-            }
-        });
-
-        // Welcome message
-        console.log('%c🎉 Welcome to Mello Code!', 'font-size: 20px; color: #f0c35d; font-weight: bold;');
-        console.log('%cTry generating code with the AI. Make sure your API is running on http://localhost:3001', 'font-size: 14px; color: #a8b5c8;');
-    </script>
-</body>
-</html>
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const axios = require('axios');
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.static('public'));
+
+const MODEL_PRESETS = {
+  fast: {
+    provider: process.env.AI_FAST_PROVIDER || 'ollama',
+    model: process.env.AI_FAST_MODEL || 'qwen2.5-coder:7b',
+    apiKey: process.env.AI_FAST_KEY || process.env.API_KEY || '',
+    baseUrl: process.env.AI_FAST_BASE_URL || process.env.BASE_URL || 'http://localhost:11434'
+  },
+  balanced: {
+    provider: process.env.AI_BALANCED_PROVIDER || 'openai',
+    model: process.env.AI_BALANCED_MODEL || process.env.MODEL || 'gpt-4o-mini',
+    apiKey: process.env.AI_BALANCED_KEY || process.env.API_KEY || '',
+    baseUrl: process.env.AI_BALANCED_BASE_URL || process.env.BASE_URL || 'https://api.openai.com/v1'
+  },
+  quality: {
+    provider: process.env.AI_QUALITY_PROVIDER || 'openai',
+    model: process.env.AI_QUALITY_MODEL || 'gpt-4o',
+    apiKey: process.env.AI_QUALITY_KEY || process.env.API_KEY || '',
+    baseUrl: process.env.AI_QUALITY_BASE_URL || process.env.BASE_URL || 'https://api.openai.com/v1'
+  }
+};
+
+const sessions = new Map();
+
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+app.get('/health', (req, res) => {
+  res.json({
+    ok: true,
+    service: 'Mello Code API',
+    models: Object.keys(MODEL_PRESETS),
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/models', (req, res) => {
+  res.json({
+    ok: true,
+    models: Object.entries(MODEL_PRESETS).map(([key, value]) => ({
+      id: key,
+      provider: value.provider,
+      model: value.model,
+      baseUrl: value.baseUrl
+    }))
+  });
+});
+
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { prompt, projectName, language, sessionId, mode = 'balanced' } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ ok: false, error: 'Missing prompt' });
+    }
+
+    const runtimeMode = MODEL_PRESETS[mode] ? mode : 'balanced';
+    const systemPrompt = buildSystemPrompt(projectName, language);
+
+    const response = await callProvider(runtimeMode, prompt, systemPrompt, language);
+
+    return res.json({
+      ok: true,
+      response,
+      mode: runtimeMode,
+      sessionId: sessionId || generateSessionId()
+    });
+  } catch (error) {
+    console.error('Chat error:', error.message);
+    return res.status(500).json({ ok: false, error: error.message || 'AI request failed' });
+  }
+});
+
+app.post('/api/generate-code', async (req, res) => {
+  try {
+    const { prompt, language, framework, mode = 'balanced' } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ ok: false, error: 'Missing prompt' });
+    }
+
+    const fullPrompt = `Generate ${language || 'JavaScript'} code for: ${prompt}\nFramework: ${framework || 'none'}\nReturn clean, working code and short explanation.`;
+    const response = await callProvider(mode, fullPrompt, 'You are an expert software engineer and code generator.', language);
+
+    return res.json({ ok: true, code: response, mode });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.post('/api/roblox/bridge', async (req, res) => {
+  try {
+    const { source, projectName, prompt, context, mode = 'fast' } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ ok: false, error: 'Missing prompt' });
+    }
+
+    const systemPrompt = `You are Mello Code, assisting with Roblox game development. Project: ${projectName || 'Unknown'}\nContext: ${JSON.stringify(context || {})}\nGenerate Luau code for Roblox Studio. Include service placement and explain where each script goes.`;
+    const response = await callProvider(mode, prompt, systemPrompt, 'lua');
+
+    return res.json({ ok: true, reply: response, source: source || 'mello-code-api', platform: 'Roblox Studio', mode });
+  } catch (error) {
+    return res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+async function callProvider(mode, userPrompt, systemPrompt, language = 'javascript') {
+  const preset = MODEL_PRESETS[mode] || MODEL_PRESETS.balanced;
+
+  switch (preset.provider) {
+    case 'openai':
+      return callOpenAI(preset, userPrompt, systemPrompt);
+    case 'anthropic':
+      return callAnthropic(preset, userPrompt, systemPrompt);
+    case 'gemini':
+      return callGemini(preset, userPrompt, systemPrompt);
+    case 'ollama':
+      return callOllama(preset, userPrompt, systemPrompt);
+    default:
+      throw new Error(`Unsupported provider: ${preset.provider}`);
+  }
+}
+
+async function callOpenAI(preset, userPrompt, systemPrompt) {
+  if (!preset.apiKey) {
+    throw new Error('OpenAI key missing. Set AI_BALANCED_KEY or AI_QUALITY_KEY.');
+  }
+
+  const response = await axios.post(`${preset.baseUrl.replace(/\/$/, '')}/chat/completions`, {
+    model: preset.model,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ],
+    temperature: 0.7,
+    max_tokens: 2048
+  }, {
+    headers: {
+      Authorization: `Bearer ${preset.apiKey}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  return response.data?.choices?.[0]?.message?.content || 'No response from OpenAI.';
+}
+
+async function callAnthropic(preset, userPrompt, systemPrompt) {
+  if (!preset.apiKey) {
+    throw new Error('Anthropic key missing. Set AI_FAST_KEY for Anthropic mode.');
+  }
+
+  const response = await axios.post('https://api.anthropic.com/v1/messages', {
+    model: preset.model,
+    max_tokens: 2048,
+    system: systemPrompt,
+    messages: [{ role: 'user', content: userPrompt }]
+  }, {
+    headers: {
+      'x-api-key': preset.apiKey,
+      'Content-Type': 'application/json',
+      'anthropic-version': '2023-06-01'
+    }
+  });
+
+  return response.data?.content?.[0]?.text || 'No response from Anthropic.';
+}
+
+async function callGemini(preset, userPrompt, systemPrompt) {
+  if (!preset.apiKey) {
+    throw new Error('Gemini key missing. Set AI_QUALITY_KEY or AI_FAST_KEY for Gemini.');
+  }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${preset.model}:generateContent?key=${preset.apiKey}`;
+  const response = await axios.post(url, {
+    contents: [{
+      role: 'user',
+      parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }]
+    }],
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 2048
+    }
+  });
+
+  return response.data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from Gemini.';
+}
+
+async function callOllama(preset, userPrompt, systemPrompt) {
+  const url = `${preset.baseUrl.replace(/\/$/, '')}/api/generate`;
+  const response = await axios.post(url, {
+    model: preset.model,
+    prompt: `${systemPrompt}\n\n${userPrompt}`,
+    stream: false,
+    format: 'text'
+  });
+
+  return response.data?.response || 'No response from Ollama.';
+}
+
+function buildSystemPrompt(projectName, language) {
+  return `You are Mello Code, an expert AI coding assistant.
+Focus on: software engineering, debugging, architecture, Roblox Luau, web apps, automation, and clean production code.
+Project: ${projectName || 'Unspecified'}
+Language target: ${language || 'JavaScript'}
+Be direct, practical, and produce working code when possible.
+Return clear code blocks and brief reasoning.`;
+}
+
+function generateSessionId() {
+  return `session_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+app.use((req, res) => {
+  res.status(404).json({ ok: false, error: 'Not found' });
+});
+
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ ok: false, error: err.message || 'Server error' });
+});
+
+app.listen(PORT, () => {
+  console.log('\n✨ Mello Code API running on http://localhost:' + PORT);
+  console.log('Available modes:');
+  Object.entries(MODEL_PRESETS).forEach(([key, preset]) => {
+    console.log(`- ${key}: ${preset.provider}/${preset.model}`);
+  });
+  console.log('\nSet your keys in .env or run local Ollama for free models.\n');
+});
+
+module.exports = app;
