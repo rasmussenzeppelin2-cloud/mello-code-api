@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mello Code Dashboard</title>
+    <style>
+      :root {
+        --bg: #0b0d12;
+        --panel: #121821;
+        --gold: #f0c35d;
+        --text: #f4f6f8;
+        --muted: #b6c2d1;
+        --line: rgba(255,255,255,0.08);
+        --success: #81e4a8;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      header {
+        padding: 24px 0;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 32px;
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 800;
+        font-size: 1.4rem;
+        margin-bottom: 12px;
+      }
+
+      .logo-mark {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #f1d179, #d5a12d);
+        color: #111;
+        font-weight: 900;
+      }
+
+      h1 { margin: 0; }
+      .subtitle { color: var(--muted); font-size: 0.95rem; }
+
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+        margin-bottom: 32px;
+      }
+
+      .card {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 24px;
+      }
+
+      .card h2 { margin: 0 0 12px; font-size: 1.2rem; }
+      .card p { margin: 0; color: var(--muted); line-height: 1.6; }
+      .card .status {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 6px 12px;
+        background: rgba(129, 228, 168, 0.12);
+        border: 1px solid rgba(129, 228, 168, 0.3);
+        border-radius: 8px;
+        color: var(--success);
+        font-size: 0.85rem;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+
+      .editor-panel {
+        background: rgba(255,255,255,0.01);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 20px;
+      }
+
+      .editor-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        color: var(--gold);
+        letter-spacing: 0.1em;
+        margin-bottom: 12px;
+      }
+
+      textarea, input, select {
+        width: 100%;
+        padding: 12px;
+        background: #0a0c10;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        color: var(--text);
+        font-family: "Courier New", monospace;
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+      }
+
+      textarea { min-height: 200px; resize: vertical; }
+
+      .button-group {
+        display: flex;
+        gap: 12px;
+      }
+
+      button {
+        flex: 1;
+        padding: 12px 16px;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s ease all;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--gold), #d5a12d);
+        color: #111;
+      }
+
+      .btn-primary:hover { transform: translateY(-2px); }
+
+      .btn-secondary {
+        background: rgba(255,255,255,0.05);
+        color: var(--text);
+        border: 1px solid var(--line);
+      }
+
+      .btn-secondary:hover { background: rgba(255,255,255,0.08); }
+
+      .response-area {
+        background: #0a0c10;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 16px;
+        min-height: 200px;
+        color: var(--muted);
+        font-family: "Courier New", monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 400px;
+        overflow: auto;
+      }
+
+      .loading {
+        color: var(--gold);
+        font-style: italic;
+      }
+
+      .roblox-section {
+        margin-top: 32px;
+        padding-top: 32px;
+        border-top: 1px solid var(--line);
+      }
+
+      .roblox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .template-btn {
+        padding: 16px;
+        background: rgba(240, 195, 93, 0.08);
+        border: 1px solid rgba(240, 195, 93, 0.3);
+        border-radius: 12px;
+        color: var(--text);
+        cursor: pointer;
+        transition: 0.2s ease all;
+      }
+
+      .template-btn:hover {
+        background: rgba(240, 195, 93, 0.15);
+        border-color: rgba(240, 195, 93, 0.5);
+      }
+
+      @media (max-width: 768px) {
+        .workspace { grid-template-columns: 1fr; }
+        .dashboard-grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="logo">
+          <div class="logo-mark">M</div>
+          <div>
+            <h1>Mello Code Dashboard</h1>
+            <p class="subtitle">API + Web Interface for AI Coding</p>
+          </div>
+        </div>
+      </header>
+
+      <div class="dashboard-grid">
+        <div class="card">
+          <h2>🚀 Get Started</h2>
+          <p>Connect to Mello Code API and start generating code instantly.</p>
+          <div class="status">API Ready</div>
+        </div>
+
+        <div class="card">
+          <h2>🎮 Roblox Plugin</h2>
+          <p>Use the Roblox Studio plugin to connect to this API and generate Luau code.</p>
+          <div class="status">Plugin Available</div>
+        </div>
+
+        <div class="card">
+          <h2>💻 Desktop App</h2>
+          <p>Download Mello Code and use this dashboard as your AI backend.</p>
+          <div class="status">Open Source</div>
+        </div>
+      </div>
+
+      <div class="workspace">
+        <div class="editor-panel">
+          <div class="editor-label">📝 Code Generation Prompt</div>
+          <textarea id="promptInput" placeholder="Describe the code you want to build...\n\nExample: Create a Roblox tycoon game with a shop system and leaderboard."></textarea>
+
+          <div class="editor-label">🔧 Language</div>
+          <select id="languageSelect">
+            <option value="javascript">JavaScript</option>
+            <option value="python">Python</option>
+            <option value="lua">Lua / Luau</option>
+            <option value="typescript">TypeScript</option>
+            <option value="csharp">C#</option>
+            <option value="java">Java</option>
+          </select>
+
+          <div class="editor-label">🎯 Framework (Optional)</div>
+          <input id="frameworkInput" placeholder="React, Vue, Django, etc." />
+
+          <div class="button-group">
+            <button class="btn-primary" onclick="generateCode()">✨ Generate Code</button>
+            <button class="btn-secondary" onclick="clearInputs()">Clear</button>
+          </div>
+        </div>
+
+        <div class="editor-panel">
+          <div class="editor-label">📤 Generated Response</div>
+          <div class="response-area" id="responseArea">Response will appear here...</div>
+          <button class="btn-secondary" style="margin-top: 12px; width: 100%;" onclick="copyResponse()">Copy Response</button>
+        </div>
+      </div>
+
+      <div class="roblox-section">
+        <h2>🎮 Roblox Quick Templates</h2>
+        <p style="color: var(--muted);">Click to generate Roblox game systems:</p>
+        <div class="roblox-grid">
+          <button class="template-btn" onclick="generateRobloxTemplate('Tycoon game with shops and upgrades')">Tycoon System</button>
+          <button class="template-btn" onclick="generateRobloxTemplate('Inventory and item system with drop functionality')">Inventory System</button>
+          <button class="template-btn" onclick="generateRobloxTemplate('Player leaderboard with stats saving')">Leaderboard</button>
+          <button class="template-btn" onclick="generateRobloxTemplate('Round-based game with lobby timer and voting')">Round System</button>
+          <button class="template-btn" onclick="generateRobloxTemplate('NPC with dialogue and quest system')">NPC System</button>
+          <button class="template-btn" onclick="generateRobloxTemplate('DataStore system for player data saving and loading')">DataStore</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API_URL = 'http://localhost:3001';
+
+      async function generateCode() {
+        const prompt = document.getElementById('promptInput').value.trim();
+        const language = document.getElementById('languageSelect').value;
+        const framework = document.getElementById('frameworkInput').value.trim();
+
+        if (!prompt) {
+          alert('Please enter a prompt');
+          return;
+        }
+
+        const responseArea = document.getElementById('responseArea');
+        responseArea.textContent = 'Generating...';
+        responseArea.classList.add('loading');
+
+        try {
+          const response = await fetch(`${API_URL}/api/generate-code`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, language, framework })
+          });
+
+          const data = await response.json();
+
+          if (data.ok) {
+            responseArea.textContent = data.code;
+            responseArea.classList.remove('loading');
+          } else {
+            responseArea.textContent = `Error: ${data.error}`;
+            responseArea.classList.remove('loading');
+          }
+        } catch (error) {
+          responseArea.textContent = `Connection error: ${error.message}`;
+          responseArea.classList.remove('loading');
+        }
+      }
+
+      function generateRobloxTemplate(template) {
+        document.getElementById('promptInput').value = `Create a Roblox game system for: ${template}`;
+        document.getElementById('languageSelect').value = 'lua';
+      }
+
+      function clearInputs() {
+        document.getElementById('promptInput').value = '';
+        document.getElementById('frameworkInput').value = '';
+        document.getElementById('responseArea').textContent = 'Response will appear here...';
+      }
+
+      function copyResponse() {
+        const text = document.getElementById('responseArea').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          alert('Copied to clipboard!');
+        });
+      }
+
+      // Allow Enter to submit
+      document.getElementById('promptInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.ctrlKey) {
+          generateCode();
+        }
+      });
+    </script>
+  </body>
+</html>
