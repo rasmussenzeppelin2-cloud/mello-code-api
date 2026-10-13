@@ -1,0 +1,22 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/health",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "AI_BALANCED_KEY",
+      "description": "API key for the balanced AI mode (default: OpenAI). Get it from https://platform.openai.com/api-keys. Without it, chat returns an error but the dashboard still loads.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "AI_QUALITY_KEY",
+      "description": "API key for the quality AI mode (default: OpenAI gpt-4o). Get it from https://platform.openai.com/api-keys. Without it, quality mode chat returns an error.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "AI_FAST_KEY",
+      "description": "API key for the fast AI mode if using a remote provider instead of local Ollama. Without it and without Ollama, fast mode chat returns an error.",
+      "requiredAtBoot": false
+    }
+  ]
+}

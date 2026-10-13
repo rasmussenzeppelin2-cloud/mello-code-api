@@ -1,242 +1,560 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const axios = require('axios');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mello Code</title>
+    <style>
+        :root {
+            --bg: #0a0d14;
+            --bg-soft: #111827;
+            --panel: rgba(17, 24, 39, 0.9);
+            --panel-2: rgba(17, 24, 39, 0.72);
+            --gold: #f0c35d;
+            --gold-2: #d5a12d;
+            --blue: #60a5fa;
+            --purple: #a78bfa;
+            --green: #4ade80;
+            --text: #f3f4f6;
+            --muted: #9ca3af;
+            --line: rgba(255,255,255,0.08);
+            --danger: #ff6b6b;
+            --shadow: 0 24px 60px rgba(0,0,0,0.45);
+        }
 
-const app = express();
-const PORT = process.env.PORT || 3001;
+        * { box-sizing: border-box; }
+        html, body {
+            margin: 0;
+            height: 100%;
+            background: radial-gradient(circle at top left, rgba(240,195,93,0.12), transparent 30%),
+                        radial-gradient(circle at bottom right, rgba(96,165,250,0.12), transparent 35%),
+                        #0a0d14;
+            color: var(--text);
+            font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
 
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.static('public'));
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+        }
 
-const MODEL_PRESETS = {
-  fast: {
-    provider: process.env.AI_FAST_PROVIDER || 'ollama',
-    model: process.env.AI_FAST_MODEL || 'qwen2.5-coder:7b',
-    apiKey: process.env.AI_FAST_KEY || process.env.API_KEY || '',
-    baseUrl: process.env.AI_FAST_BASE_URL || process.env.BASE_URL || 'http://localhost:11434'
-  },
-  balanced: {
-    provider: process.env.AI_BALANCED_PROVIDER || 'openai',
-    model: process.env.AI_BALANCED_MODEL || process.env.MODEL || 'gpt-4o-mini',
-    apiKey: process.env.AI_BALANCED_KEY || process.env.API_KEY || '',
-    baseUrl: process.env.AI_BALANCED_BASE_URL || process.env.BASE_URL || 'https://api.openai.com/v1'
-  },
-  quality: {
-    provider: process.env.AI_QUALITY_PROVIDER || 'openai',
-    model: process.env.AI_QUALITY_MODEL || 'gpt-4o',
-    apiKey: process.env.AI_QUALITY_KEY || process.env.API_KEY || '',
-    baseUrl: process.env.AI_QUALITY_BASE_URL || process.env.BASE_URL || 'https://api.openai.com/v1'
-  }
-};
+        .app {
+            width: 100%;
+            max-width: 1600px;
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 260px 1fr;
+        }
 
-const sessions = new Map();
+        .sidebar {
+            background: rgba(15, 19, 28, 0.96);
+            border-right: 1px solid var(--line);
+            padding: 18px 16px;
+        }
 
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  next();
-});
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            font-weight: 800;
+            font-size: 1.2rem;
+        }
 
-app.get('/health', (req, res) => {
-  res.json({
-    ok: true,
-    service: 'Mello Code API',
-    models: Object.keys(MODEL_PRESETS),
-    timestamp: new Date().toISOString()
-  });
-});
+        .brand-mark {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, var(--gold), var(--gold-2));
+            color: #111827;
+            font-weight: 900;
+            box-shadow: 0 8px 24px rgba(240,195,93,0.35);
+        }
 
-app.get('/api/models', (req, res) => {
-  res.json({
-    ok: true,
-    models: Object.entries(MODEL_PRESETS).map(([key, value]) => ({
-      id: key,
-      provider: value.provider,
-      model: value.model,
-      baseUrl: value.baseUrl
-    }))
-  });
-});
+        .nav-section {
+            margin-top: 28px;
+        }
 
-app.post('/api/chat', async (req, res) => {
-  try {
-    const { prompt, projectName, language, sessionId, mode = 'balanced' } = req.body;
-    if (!prompt) {
-      return res.status(400).json({ ok: false, error: 'Missing prompt' });
-    }
+        .nav-label {
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-size: 11px;
+            margin: 0 0 10px 8px;
+        }
 
-    const runtimeMode = MODEL_PRESETS[mode] ? mode : 'balanced';
-    const systemPrompt = buildSystemPrompt(projectName, language);
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            text-align: left;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
 
-    const response = await callProvider(runtimeMode, prompt, systemPrompt, language);
+        .nav-item:hover {
+            background: rgba(255,255,255,0.02);
+            border-color: var(--line);
+        }
 
-    return res.json({
-      ok: true,
-      response,
-      mode: runtimeMode,
-      sessionId: sessionId || generateSessionId()
-    });
-  } catch (error) {
-    console.error('Chat error:', error.message);
-    return res.status(500).json({ ok: false, error: error.message || 'AI request failed' });
-  }
-});
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(240,195,93,0.12), rgba(96,165,250,0.08));
+            border-color: rgba(240,195,93,0.3);
+        }
 
-app.post('/api/generate-code', async (req, res) => {
-  try {
-    const { prompt, language, framework, mode = 'balanced' } = req.body;
-    if (!prompt) {
-      return res.status(400).json({ ok: false, error: 'Missing prompt' });
-    }
+        .nav-icon {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--gold);
+        }
 
-    const fullPrompt = `Generate ${language || 'JavaScript'} code for: ${prompt}\nFramework: ${framework || 'none'}\nReturn clean, working code and short explanation.`;
-    const response = await callProvider(mode, fullPrompt, 'You are an expert software engineer and code generator.', language);
+        .sidebar-box {
+            margin-top: 26px;
+            padding: 16px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: rgba(255,255,255,0.02);
+        }
 
-    return res.json({ ok: true, code: response, mode });
-  } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message });
-  }
-});
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 13px;
+        }
 
-app.post('/api/roblox/bridge', async (req, res) => {
-  try {
-    const { source, projectName, prompt, context, mode = 'fast' } = req.body;
-    if (!prompt) {
-      return res.status(400).json({ ok: false, error: 'Missing prompt' });
-    }
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 16px rgba(74,222,128,0.6);
+        }
 
-    const systemPrompt = `You are Mello Code, assisting with Roblox game development. Project: ${projectName || 'Unknown'}\nContext: ${JSON.stringify(context || {})}\nGenerate Luau code for Roblox Studio. Include service placement and explain where each script goes.`;
-    const response = await callProvider(mode, prompt, systemPrompt, 'lua');
+        .main {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
 
-    return res.json({ ok: true, reply: response, source: source || 'mello-code-api', platform: 'Roblox Studio', mode });
-  } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message });
-  }
-});
+        .topbar {
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(10,13,20,0.55);
+            backdrop-filter: blur(10px);
+        }
 
-async function callProvider(mode, userPrompt, systemPrompt, language = 'javascript') {
-  const preset = MODEL_PRESETS[mode] || MODEL_PRESETS.balanced;
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: var(--muted);
+        }
 
-  switch (preset.provider) {
-    case 'openai':
-      return callOpenAI(preset, userPrompt, systemPrompt);
-    case 'anthropic':
-      return callAnthropic(preset, userPrompt, systemPrompt);
-    case 'gemini':
-      return callGemini(preset, userPrompt, systemPrompt);
-    case 'ollama':
-      return callOllama(preset, userPrompt, systemPrompt);
-    default:
-      throw new Error(`Unsupported provider: ${preset.provider}`);
-  }
-}
+        .mode-select {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--line);
+            color: var(--text);
+            border-radius: 10px;
+            padding: 10px 12px;
+            min-width: 160px;
+        }
 
-async function callOpenAI(preset, userPrompt, systemPrompt) {
-  if (!preset.apiKey) {
-    throw new Error('OpenAI key missing. Set AI_BALANCED_KEY or AI_QUALITY_KEY.');
-  }
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-  const response = await axios.post(`${preset.baseUrl.replace(/\/$/, '')}/chat/completions`, {
-    model: preset.model,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt }
-    ],
-    temperature: 0.7,
-    max_tokens: 2048
-  }, {
-    headers: {
-      Authorization: `Bearer ${preset.apiKey}`,
-      'Content-Type': 'application/json'
-    }
-  });
+        .ghost-btn, .primary-btn {
+            border-radius: 10px;
+            font-weight: 700;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
 
-  return response.data?.choices?.[0]?.message?.content || 'No response from OpenAI.';
-}
+        .ghost-btn {
+            background: rgba(255,255,255,0.02);
+            border-color: var(--line);
+            color: var(--text);
+            padding: 10px 14px;
+        }
 
-async function callAnthropic(preset, userPrompt, systemPrompt) {
-  if (!preset.apiKey) {
-    throw new Error('Anthropic key missing. Set AI_FAST_KEY for Anthropic mode.');
-  }
+        .primary-btn {
+            background: linear-gradient(135deg, var(--gold), var(--gold-2));
+            color: #111827;
+            padding: 10px 16px;
+            box-shadow: 0 8px 24px rgba(240,195,93,0.28);
+        }
 
-  const response = await axios.post('https://api.anthropic.com/v1/messages', {
-    model: preset.model,
-    max_tokens: 2048,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: userPrompt }]
-  }, {
-    headers: {
-      'x-api-key': preset.apiKey,
-      'Content-Type': 'application/json',
-      'anthropic-version': '2023-06-01'
-    }
-  });
+        .ghost-btn:hover, .primary-btn:hover {
+            transform: translateY(-1px);
+        }
 
-  return response.data?.content?.[0]?.text || 'No response from Anthropic.';
-}
+        .workspace {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 0;
+            flex: 1;
+            min-height: 0;
+        }
 
-async function callGemini(preset, userPrompt, systemPrompt) {
-  if (!preset.apiKey) {
-    throw new Error('Gemini key missing. Set AI_QUALITY_KEY or AI_FAST_KEY for Gemini.');
-  }
+        .panel {
+            background: rgba(10,13,20,0.42);
+            border-right: 1px solid var(--line);
+            padding: 20px;
+        }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${preset.model}:generateContent?key=${preset.apiKey}`;
-  const response = await axios.post(url, {
-    contents: [{
-      role: 'user',
-      parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }]
-    }],
-    generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 2048
-    }
-  });
+        .panel-title {
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-size: 11px;
+            margin-bottom: 14px;
+        }
 
-  return response.data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from Gemini.';
-}
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
 
-async function callOllama(preset, userPrompt, systemPrompt) {
-  const url = `${preset.baseUrl.replace(/\/$/, '')}/api/generate`;
-  const response = await axios.post(url, {
-    model: preset.model,
-    prompt: `${systemPrompt}\n\n${userPrompt}`,
-    stream: false,
-    format: 'text'
-  });
+        .file-item {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            color: var(--text);
+            padding: 10px 12px;
+            font-size: 13px;
+        }
 
-  return response.data?.response || 'No response from Ollama.';
-}
+        .editor {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            background: rgba(15,19,28,0.45);
+        }
 
-function buildSystemPrompt(projectName, language) {
-  return `You are Mello Code, an expert AI coding assistant.
-Focus on: software engineering, debugging, architecture, Roblox Luau, web apps, automation, and clean production code.
-Project: ${projectName || 'Unspecified'}
-Language target: ${language || 'JavaScript'}
-Be direct, practical, and produce working code when possible.
-Return clear code blocks and brief reasoning.`;
-}
+        .editor-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 18px;
+            border-bottom: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 13px;
+        }
 
-function generateSessionId() {
-  return `session_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-}
+        .tabs {
+            display: flex;
+            gap: 10px;
+        }
 
-app.use((req, res) => {
-  res.status(404).json({ ok: false, error: 'Not found' });
-});
+        .tab {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--line);
+            color: var(--muted);
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
 
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ ok: false, error: err.message || 'Server error' });
-});
+        .chat-wrap {
+            display: grid;
+            grid-template-rows: 1fr auto;
+            height: calc(100vh - 160px);
+            min-height: 500px;
+        }
 
-app.listen(PORT, () => {
-  console.log('\n✨ Mello Code API running on http://localhost:' + PORT);
-  console.log('Available modes:');
-  Object.entries(MODEL_PRESETS).forEach(([key, preset]) => {
-    console.log(`- ${key}: ${preset.provider}/${preset.model}`);
-  });
-  console.log('\nSet your keys in .env or run local Ollama for free models.\n');
-});
+        .messages {
+            padding: 24px;
+            overflow: auto;
+        }
 
-module.exports = app;
+        .message {
+            max-width: 90%;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 16px 18px;
+            margin-bottom: 16px;
+            line-height: 1.7;
+            color: var(--text);
+            white-space: pre-wrap;
+        }
+
+        .message.user {
+            margin-left: auto;
+            background: linear-gradient(135deg, rgba(240,195,93,0.12), rgba(96,165,250,0.08));
+            border-color: rgba(240,195,93,0.35);
+        }
+
+        .message.assistant {
+            margin-right: auto;
+            border-color: rgba(96,165,250,0.2);
+        }
+
+        .composer {
+            border-top: 1px solid var(--line);
+            padding: 18px 22px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .prompt-box {
+            width: 100%;
+            background: rgba(10,13,20,0.8);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            color: var(--text);
+            min-height: 120px;
+            resize: vertical;
+            padding: 16px 18px;
+            font-size: 14px;
+            line-height: 1.7;
+            font-family: inherit;
+        }
+
+        .composer-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .chip-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--line);
+            color: var(--muted);
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .response-box {
+            margin-top: 12px;
+            width: 100%;
+            background: rgba(10,13,20,0.7);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            min-height: 120px;
+            padding: 16px;
+            white-space: pre-wrap;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            color: var(--text);
+        }
+
+        @media (max-width: 1000px) {
+            .app { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
+            .workspace { grid-template-columns: 1fr; }
+            .panel { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-mark">M</div>
+                <span>Mello Code</span>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-label">Workspace</div>
+                <button class="nav-item active"><span class="nav-icon"></span>Chat</button>
+                <button class="nav-item"><span class="nav-icon" style="background: var(--blue)"></span>Projects</button>
+                <button class="nav-item"><span class="nav-icon" style="background: var(--purple)"></span>Generate</button>
+                <button class="nav-item"><span class="nav-icon" style="background: var(--green)"></span>Deploy</button>
+            </div>
+
+            <div class="sidebar-box">
+                <div class="nav-label" style="margin-left: 0;">Status</div>
+                <div class="status-row">
+                    <span>API</span>
+                    <span class="dot"></span>
+                </div>
+                <div class="status-row">
+                    <span>Models</span>
+                    <span>3 ready</span>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <strong>Codex-style AI workspace</strong>
+                </div>
+                <div class="topbar-right">
+                    <select id="modeSelect" class="mode-select">
+                        <option value="fast">Fast</option>
+                        <option value="balanced" selected>Balanced</option>
+                        <option value="quality">Quality</option>
+                    </select>
+                    <button class="ghost-btn" id="refreshModelsBtn">Refresh models</button>
+                    <button class="primary-btn" id="sendPromptBtn">Run</button>
+                </div>
+            </header>
+
+            <div class="workspace">
+                <aside class="panel">
+                    <div class="panel-title">Project files</div>
+                    <div class="file-list">
+                        <div class="file-item">src/index.js</div>
+                        <div class="file-item">api/server.js</div>
+                        <div class="file-item">game/tycoon.lua</div>
+                        <div class="file-item">ui/dashboard.tsx</div>
+                    </div>
+                </aside>
+
+                <section class="editor">
+                    <div class="editor-header">
+                        <div class="tabs">
+                            <div class="tab">main.ts</div>
+                            <div class="tab">chat</div>
+                            <div class="tab">deploy</div>
+                        </div>
+                        <div>Connected: Mello Code API</div>
+                    </div>
+
+                    <div class="chat-wrap">
+                        <div class="messages" id="messages">
+                            <div class="message assistant">
+                                Hello. I am Mello Code. I can build apps, websites, Roblox systems, and backend logic. Choose a mode and ask for anything.
+                            </div>
+                        </div>
+
+                        <div class="composer">
+                            <textarea id="promptInput" class="prompt-box" placeholder="Ask Mello Code to build a Roblox tycoon, a backend API, a landing page, or a full app..."></textarea>
+                            <div class="composer-actions">
+                                <div class="chip-row">
+                                    <span class="chip" data-template="Create a Roblox tycoon game with shops and upgrades">Tycoon</span>
+                                    <span class="chip" data-template="Build a React dashboard with charts and auth">Dashboard</span>
+                                    <span class="chip" data-template="Create a Node API with login and MongoDB">API</span>
+                                    <span class="chip" data-template="Write a full landing page with signup and pricing">Landing page</span>
+                                </div>
+                                <button class="primary-btn" id="runPromptBtn">Generate</button>
+                            </div>
+                            <div class="response-box" id="responseBox">Response will appear here…</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        const modeSelect = document.getElementById('modeSelect');
+        const messages = document.getElementById('messages');
+        const promptInput = document.getElementById('promptInput');
+        const responseBox = document.getElementById('responseBox');
+
+        async function refreshModels() {
+            try {
+                const response = await fetch(`${API_URL}/api/models`);
+                const data = await response.json();
+                console.log('Models:', data);
+            } catch (err) {
+                console.log('No API connection yet:', err.message);
+            }
+        }
+
+        function addMessage(role, text) {
+            const el = document.createElement('div');
+            el.className = `message ${role}`;
+            el.textContent = text;
+            messages.appendChild(el);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        async function runPrompt() {
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                responseBox.textContent = 'Write a prompt first.';
+                return;
+            }
+
+            addMessage('user', prompt);
+            responseBox.textContent = 'Generating...';
+
+            try {
+                const res = await fetch(`${API_URL}/api/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt,
+                        projectName: 'Mello Code',
+                        language: 'javascript',
+                        mode: modeSelect.value
+                    })
+                });
+
+                const data = await res.json();
+                if (data.ok) {
+                    const text = data.response || 'No response returned.';
+                    addMessage('assistant', text);
+                    responseBox.textContent = text;
+                } else {
+                    const errorText = data.error || 'Unknown error';
+                    addMessage('assistant', `Error: ${errorText}`);
+                    responseBox.textContent = `Error: ${errorText}`;
+                }
+            } catch (error) {
+                const errorMsg = `Connection error: ${error.message}. Make sure the API is running.`;
+                addMessage('assistant', errorMsg);
+                responseBox.textContent = errorMsg;
+            }
+        }
+
+        document.getElementById('runPromptBtn').addEventListener('click', runPrompt);
+        document.getElementById('sendPromptBtn').addEventListener('click', runPrompt);
+        document.getElementById('refreshModelsBtn').addEventListener('click', refreshModels);
+
+        document.querySelectorAll('.chip').forEach((chip) => {
+            chip.addEventListener('click', () => {
+                const text = chip.dataset.template;
+                promptInput.value = text;
+                promptInput.focus();
+            });
+        });
+
+        promptInput.addEventListener('keydown', (event) => {
+            if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+                runPrompt();
+            }
+        });
+
+        refreshModels();
+    </script>
+</body>
+</html>
